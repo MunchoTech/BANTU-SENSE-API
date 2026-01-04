@@ -1,6 +1,13 @@
 # BANTU-SENSE-API
 # Bantu-Sense: Achieving Cognitive Justice through Behavioral NLP for Zambia.
 # Bantu-Sense-Core
+## ⚖️ Mission: Digital Dignity
+Bantu-Sense is not a translation tool; it is a Behavioral Informatics engine. 
+
+### Core Objectives:
+1. **Linguistic Sovereignty:** Capturing the "Sense" (sentiment/intent) of Bemba and Nyanja to prevent cultural erasure in digital spaces.
+2. **Behavioral Informatics:** Mapping Zambian emotional contexts that Western-trained models typically misinterpret or ignore.
+3. **Foundation:** Leveraging `afro-xlmr-large-76L` to prove that high-fidelity AI can be localized for the Zambian context.
 
 A high-performance NLP engine foundation optimized for Bantu language processing, built on Python 3.13 and Arch Linux.
 
