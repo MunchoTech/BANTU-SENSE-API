@@ -1,0 +1,15 @@
+# Java junk
+target/
+*.class
+.mvn/
+
+# Python junk
+__pycache__/
+*.pyc
+venv/
+.env
+
+# IDE junk
+.idea/
+.vscode/
+*.iml
