@@ -23,4 +23,10 @@ public class InquiryController {
         // Return the saved object so the user knows it worked
         return ResponseEntity.ok(savedInquiry);
     }
+    // This listens for "GET" requests (reading data)
+    @GetMapping("/all")
+    public ResponseEntity<java.util.List<Inquiry>> getAllInquiries() {
+        // Repository.findAll() is a built-in magic trick from Spring Data JPA
+        return ResponseEntity.ok(inquiryService.getAllInquiries());
+    }
 }

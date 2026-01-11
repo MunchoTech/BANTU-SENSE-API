@@ -34,4 +34,7 @@ public class InquiryService {
         // The "Hands" (Repository) save it to Postgres
         return inquiryRepository.save(inquiry);
     }
+    public java.util.List<Inquiry> getAllInquiries() {
+        return inquiryRepository.findAll();
+    }
 }
