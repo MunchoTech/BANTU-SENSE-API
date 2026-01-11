@@ -6,7 +6,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "inquiries")
-@Data // This is Lombok working for me!
+@Data // This is Lombok working for me
+// !
 public class Inquiry {
 
     @Id
