@@ -1,33 +1,30 @@
 # 🇿🇲 BANTU-SENSE
 ### A Behavioral NLP Framework for Cognitive Justice and Digital Dignity
 
-**Bantu-Sense** is a specialized AI-driven "Cultural Interpretability Layer" designed to bridge the linguistic gap in Zambia. By moving beyond literal word-swaps, this API utilizes **Behavioral Informatics** to ensure that low-resource languages (Nyanja, Bemba, Tonga) are no longer invisible in the digital economy.
+**Bantu-Sense** is a specialized AI-driven "Cultural Interpretability Layer" designed to bridge the linguistic gap in Bantu-speaking regions. Moving beyond literal word-swaps, this framework utilizes **Behavioral Informatics** to ensure that low-resource languages are no longer invisible in the global digital economy.
 
----
+## 🏛️ Project Vision
+Standard AI models suffer from "Digital Invisibility"—failing to capture the cultural nuance and emotional weight of local languages. Bantu-Sense is built to restore **Digital Dignity**, providing a localized AI layer that prioritizes context, intent, and human urgency in high-stakes sectors.
 
-## 🏆 UNZA Students Innovation Challenge 2026
-**Applicant:** Robert Musomela  
-**Category:** Innovation / ICT & Artificial Intelligence
-
-## 🧠 The Core Innovation: The "Spine" & "Brain"
-Bantu-Sense operates as a scalable API providing a specialized interface for:
-1. **AI Intent Classification:** Categorizing citizen inquiries into **Medical, Legal, and Financial** domains.
-2. **Behavioral Urgency Scoring:** An inference engine that analyzes linguistic markers to assign a 1–10 "Urgency Score."
-3. **Context-Aware Semantic Mapping:** Leveraging **Afro-XLM-R** to understand the "how" and "why" of Zambian dialects.
+## 🧠 Core API Capabilities
+Bantu-Sense operates as a scalable RESTful API that provides:
+- **AI Intent Classification:** Domain-specific categorization for **Medical, Legal, and Financial** sectors.
+- **Behavioral Urgency Scoring:** A sentiment-analysis engine that distinguishes routine inquiries from emergencies using linguistic markers.
+- **Context-Aware Mapping:** Deep-learning inference using **Afro-XLM-R** to understand the "how" and "why" behind Zambian dialects.
 
 
 
-## 🏗️ Technical Implementation
-This repository contains the **Core Engine**, structured as a high-resilience microservice architecture:
-- **The Spine (Java/Spring Boot):** Manages RESTful pathways, transaction persistence, and system-wide resilience.
-- **The Brain (Python/FastAPI):** Orchestrates deep-learning inference and intent detection.
-- **The Memory (PostgreSQL):** Stores linguistic data and audit trails for continuous model refinement.
+## 🏗️ System Architecture
+The framework is built as a high-resilience microservice ecosystem:
+- **Core Engine (Java/Spring Boot):** Manages the "Spine" of the system, including RESTful pathways, transaction persistence, and system-wide resilience.
+- **Inference Layer (Python/FastAPI):** Orchestrates the AI "Brain" for real-time linguistic processing.
+- **Data Persistence (PostgreSQL):** Stores behavioral markers and audit trails for continuous model refinement.
 
-## 🛡️ Resilience & Ethical Design
-- **Lean Hardware Optimization:** Designed to run efficiently without massive server overhead.
-- **Operational Resilience:** If the AI inference engine is unreachable, the Spine queues inquiries as `PENDING_ANALYSIS`, ensuring no Zambian voice is lost due to technical downtime.
+## 🛡️ Engineering for Resilience
+- **Fail-Safe Mechanism:** Implements an "Offline Fallback" system; if the inference engine is unreachable, the API queues inquiries as `PENDING_ANALYSIS`, ensuring zero data loss.
+- **Scalable Design:** Built to expand from Nyanja and Bemba to all 70+ Zambian languages and beyond.
 
-## 📊 Real-Time API Response (Current Build)
+## 📊 Live API Integration (Production Output)
 ```json
 {
   "id": 8,
