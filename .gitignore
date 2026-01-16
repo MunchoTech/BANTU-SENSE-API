@@ -13,3 +13,7 @@ venv/
 .idea/
 .vscode/
 *.iml
+
+# LibreOffice/Excel lock files
+.~lock.*#
+*.tmp

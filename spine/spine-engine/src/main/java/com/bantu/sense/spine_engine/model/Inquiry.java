@@ -13,6 +13,9 @@ public class Inquiry {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @ManyToOne // Why: Many inquiries can belong to One user
+    @JoinColumn(name = "user_id") // Why: This creates the "Foreign Key" column in SQL
+    private User user;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String originalText;

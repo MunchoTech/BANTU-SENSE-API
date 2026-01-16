@@ -15,13 +15,17 @@ public class InquiryController {
     private InquiryService inquiryService;
 
     // This method listens for "POST" requests (sending data)
+    // Create a small "Request" class or use a Map to grab the specific field
     @PostMapping("/send")
-    public ResponseEntity<Inquiry> receiveInquiry(@RequestBody String nyanjaText) {
-        // We pass the text to our Service to handle the logic
-        Inquiry savedInquiry = inquiryService.saveInquiry(nyanjaText);
+    public ResponseEntity<?> receiveInquiry(@RequestBody Inquiry input) {
+        Inquiry saved = inquiryService.saveInquiry(input.getOriginalText());
 
-        // Return the saved object so the user knows it worked
-        return ResponseEntity.ok(savedInquiry);
+        // If the AI was offline, we inform the user
+        if ("PENDING_ANALYSIS".equals(saved.getDetectedIntent())) {
+            return ResponseEntity.accepted().body("Message received. We are processing it shortly.");
+        }
+
+        return ResponseEntity.ok(saved);
     }
     // This listens for "GET" requests (reading data)
     @GetMapping("/all")
