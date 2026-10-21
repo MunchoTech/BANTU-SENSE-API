@@ -17,16 +17,18 @@ public class InquiryService {
     @Autowired // NEW: We plug in the "Caller" we just built
     private AIService aiService;
 
-    public Inquiry saveInquiry(String text) {
+    public Inquiry saveInquiry(String text, boolean donateForReview) {
         Inquiry inquiry = new Inquiry();
         inquiry.setOriginalText(text);
 
         // 1. Get the suitcase back from Python
-        AnalysisResponse aiResult = aiService.callPythonAI(text);
+        AnalysisResponse aiResult = aiService.callPythonAI(text, donateForReview);
 
         // 2. Map the data (The missing link is here!)
         inquiry.setDetectedIntent(aiResult.getIntent());
         inquiry.setUrgencyLevel(aiResult.getUrgency_score());
+        inquiry.setAnalysisMessage(aiResult.getMessage());
+        inquiry.setReviewSubmitted(aiResult.getReview_submitted());
 
         // NEW: Clean the "%" sign and save the number
         if (aiResult.getConfidence() != null) {

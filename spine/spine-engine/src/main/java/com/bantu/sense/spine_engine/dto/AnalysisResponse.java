@@ -9,4 +9,5 @@ public class AnalysisResponse {
     private String urgency_score; // Matches Python's "urgency_score"
     private String confidence;
     private String message; // For when Python is "uncertain"
+    private Boolean review_submitted;
 }

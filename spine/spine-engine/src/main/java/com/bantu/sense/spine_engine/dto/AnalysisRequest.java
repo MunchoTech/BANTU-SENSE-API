@@ -9,4 +9,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor // Why #3
 public class AnalysisRequest {
     private String text;
+    private boolean donate_for_review;
 }

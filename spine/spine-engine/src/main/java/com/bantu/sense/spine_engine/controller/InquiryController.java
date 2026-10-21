@@ -2,13 +2,16 @@ package com.bantu.sense.spine_engine.controller;
 
 
 import com.bantu.sense.spine_engine.model. Inquiry;
+import com.bantu.sense.spine_engine.dto.InquiryRequest;
 import com.bantu.sense.spine_engine.service.InquiryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 @RestController // Tells Spring this class handles web requests
 @RequestMapping("/api/inquiries") // The "URL address" for this ear
+@CrossOrigin(origins = "http://localhost:5173") // Allow your React app
 public class InquiryController {
 
     @Autowired
@@ -17,8 +20,8 @@ public class InquiryController {
     // This method listens for "POST" requests (sending data)
     // Create a small "Request" class or use a Map to grab the specific field
     @PostMapping("/send")
-    public ResponseEntity<?> receiveInquiry(@RequestBody Inquiry input) {
-        Inquiry saved = inquiryService.saveInquiry(input.getOriginalText());
+    public ResponseEntity<?> receiveInquiry(@RequestBody InquiryRequest input) {
+        Inquiry saved = inquiryService.saveInquiry(input.getOriginalText(), input.isDonateForReview());
 
         // If the AI was offline, we inform the user
         if ("PENDING_ANALYSIS".equals(saved.getDetectedIntent())) {

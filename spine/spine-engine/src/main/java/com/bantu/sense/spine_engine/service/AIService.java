@@ -17,8 +17,8 @@ public class AIService {
 
     // Inside your AIService class...
 
-    public AnalysisResponse callPythonAI(String nyanjaText) {
-        AnalysisRequest request = new AnalysisRequest(nyanjaText);
+    public AnalysisResponse callPythonAI(String nyanjaText, boolean donateForReview) {
+        AnalysisRequest request = new AnalysisRequest(nyanjaText, donateForReview);
 
         try {
             // This is the attempt to talk to Python
