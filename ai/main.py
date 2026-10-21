@@ -1,9 +1,11 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import joblib
 from transformers import pipeline
 import csv
 from datetime import datetime
+import os
+from pathlib import Path
 
 app = FastAPI()
 
@@ -30,6 +32,24 @@ clf = joblib.load('bantu_sense_head.joblib')
 
 class UserInput(BaseModel):
     text: str
+    donate_for_review: bool = Field(
+        default=False,
+        description="Explicitly allow this message to be stored for human review and model improvement.",
+    )
+
+
+def save_review_candidate(text: str, intent: str, confidence: float) -> bool:
+    """Save a low-confidence message only after opt-in and explicit storage configuration."""
+    review_log_path = os.environ.get("BANTU_REVIEW_LOG_PATH")
+    if not review_log_path:
+        return False
+
+    path = Path(review_log_path).expanduser()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open(mode="a", newline="", encoding="utf-8") as log_file:
+        writer = csv.writer(log_file)
+        writer.writerow([datetime.now().isoformat(), text, intent, f"{confidence:.2f}%"])
+    return True
 
 @app.post("/analyze")
 async def predict_intent(data: UserInput):
@@ -43,18 +63,22 @@ async def predict_intent(data: UserInput):
     # --- 3. APPLYING BEHAVIORAL LOGIC ---
     urgency_status = calculate_urgency(user_text, intent_label.upper())
 
-    # --- 4. THE AUDIT LOG (Lusaka Protocol) ---
+    # --- 4. OPTIONAL, CONSENT-BASED REVIEW COLLECTION ---
     if confidence < 80.0:
-        with open('audit_log.csv', mode='a', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow([datetime.now(), user_text, intent_label, f"{confidence:.2f}%"])
-        
+        review_submitted = data.donate_for_review and save_review_candidate(
+            user_text, intent_label, confidence
+        )
         return {
             "status": "uncertain",
             "intent": "UNCERTAIN",
-            "urgency": urgency_status,
+            "urgency_score": urgency_status,
             "confidence": f"{confidence:.2f}%",
-            "message": "Logged to Lusaka Protocol for refinement."
+            "review_submitted": review_submitted,
+            "message": (
+                "Your message was submitted for review with your consent."
+                if review_submitted
+                else "The analysis was uncertain. Your message was not stored for model improvement."
+            ),
         }
 
     # --- 5. THE WINNING RESPONSE ---
