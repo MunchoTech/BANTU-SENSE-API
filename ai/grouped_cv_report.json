@@ -1,0 +1,220 @@
+{
+  "evaluation": "5-fold stratified grouped cross-validation",
+  "fold_stratification": "combined language and intent label",
+  "random_seed": 42,
+  "encoder": "Davlan/afro-xlmr-large-76L",
+  "classifier": "LogisticRegression(max_iter=1000)",
+  "feature_extraction": "same as current serving path: text[:512], first token vector",
+  "source_contributors": 24,
+  "effective_groups_after_exact_phrase_leakage_control": 23,
+  "contributors_grouped_together_due_to_shared_exact_phrases": 1,
+  "source_derived_phrases_evaluated": 416,
+  "train_csv_rows_without_source_contributor_mapping_excluded": 8,
+  "language_counts": {
+    "nyanja": 222,
+    "bemba": 194
+  },
+  "class_counts": {
+    "medical": 146,
+    "financial": 143,
+    "legal": 127
+  },
+  "majority_class_baseline": {
+    "class": "medical",
+    "accuracy": 0.351
+  },
+  "overall": {
+    "accuracy": 0.6322,
+    "macro_f1": 0.6317,
+    "by_class": {
+      "financial": {
+        "precision": 0.6791044776119403,
+        "recall": 0.6363636363636364,
+        "f1-score": 0.6570397111913358,
+        "support": 143.0
+      },
+      "legal": {
+        "precision": 0.5170068027210885,
+        "recall": 0.5984251968503937,
+        "f1-score": 0.5547445255474452,
+        "support": 127.0
+      },
+      "medical": {
+        "precision": 0.7111111111111111,
+        "recall": 0.6575342465753424,
+        "f1-score": 0.6832740213523132,
+        "support": 146.0
+      },
+      "accuracy": 0.6322115384615384,
+      "macro avg": {
+        "precision": 0.6357407971480465,
+        "recall": 0.6307743599297909,
+        "f1-score": 0.6316860860303647,
+        "support": 416.0
+      },
+      "weighted avg": {
+        "precision": 0.6408510251593941,
+        "recall": 0.6322115384615384,
+        "f1-score": 0.635017405197895,
+        "support": 416.0
+      }
+    }
+  },
+  "confusion_matrix_class_order": [
+    "financial",
+    "legal",
+    "medical"
+  ],
+  "confusion_matrix_rows_actual_columns_predicted": [
+    [
+      91,
+      37,
+      15
+    ],
+    [
+      27,
+      76,
+      24
+    ],
+    [
+      16,
+      34,
+      96
+    ]
+  ],
+  "by_language": {
+    "bemba": {
+      "accuracy": 0.6856,
+      "macro_f1": 0.6853,
+      "by_class": {
+        "financial": {
+          "precision": 0.75,
+          "recall": 0.6818181818181818,
+          "f1-score": 0.7142857142857143,
+          "support": 66.0
+        },
+        "legal": {
+          "precision": 0.5652173913043478,
+          "recall": 0.65,
+          "f1-score": 0.6046511627906976,
+          "support": 60.0
+        },
+        "medical": {
+          "precision": 0.7538461538461538,
+          "recall": 0.7205882352941176,
+          "f1-score": 0.7368421052631579,
+          "support": 68.0
+        },
+        "accuracy": 0.6855670103092784,
+        "macro avg": {
+          "precision": 0.6896878483835005,
+          "recall": 0.6841354723707664,
+          "f1-score": 0.6852596607798566,
+          "support": 194.0
+        },
+        "weighted avg": {
+          "precision": 0.6941988759783471,
+          "recall": 0.6855670103092784,
+          "f1-score": 0.6882844848875965,
+          "support": 194.0
+        }
+      }
+    },
+    "nyanja": {
+      "accuracy": 0.5856,
+      "macro_f1": 0.5849,
+      "by_class": {
+        "financial": {
+          "precision": 0.6216216216216216,
+          "recall": 0.5974025974025974,
+          "f1-score": 0.609271523178808,
+          "support": 77.0
+        },
+        "legal": {
+          "precision": 0.47435897435897434,
+          "recall": 0.5522388059701493,
+          "f1-score": 0.5103448275862069,
+          "support": 67.0
+        },
+        "medical": {
+          "precision": 0.6714285714285714,
+          "recall": 0.6025641025641025,
+          "f1-score": 0.6351351351351351,
+          "support": 78.0
+        },
+        "accuracy": 0.5855855855855856,
+        "macro avg": {
+          "precision": 0.5891363891363891,
+          "recall": 0.5840685019789498,
+          "f1-score": 0.5849171619667167,
+          "support": 222.0
+        },
+        "weighted avg": {
+          "precision": 0.5946772284610122,
+          "recall": 0.5855855855855856,
+          "f1-score": 0.5885024832143451,
+          "support": 222.0
+        }
+      }
+    }
+  },
+  "current_80_percent_abstention_threshold": {
+    "accepted_phrases": 263,
+    "coverage": 0.6322,
+    "accuracy_on_accepted": 0.7376,
+    "abstained_phrases": 153
+  },
+  "folds": [
+    {
+      "fold": 1,
+      "held_out_contributors": 4,
+      "held_out_phrases": 81,
+      "held_out_phrases_by_language": {
+        "bemba": 40,
+        "nyanja": 41
+      }
+    },
+    {
+      "fold": 2,
+      "held_out_contributors": 7,
+      "held_out_phrases": 84,
+      "held_out_phrases_by_language": {
+        "nyanja": 47,
+        "bemba": 37
+      }
+    },
+    {
+      "fold": 3,
+      "held_out_contributors": 4,
+      "held_out_phrases": 81,
+      "held_out_phrases_by_language": {
+        "nyanja": 41,
+        "bemba": 40
+      }
+    },
+    {
+      "fold": 4,
+      "held_out_contributors": 5,
+      "held_out_phrases": 93,
+      "held_out_phrases_by_language": {
+        "nyanja": 53,
+        "bemba": 40
+      }
+    },
+    {
+      "fold": 5,
+      "held_out_contributors": 3,
+      "held_out_phrases": 77,
+      "held_out_phrases_by_language": {
+        "nyanja": 40,
+        "bemba": 37
+      }
+    }
+  ],
+  "limitations": [
+    "Only 24 survey contributors are available; estimates may vary with new contributors.",
+    "Eight train.csv rows have no matching source contributor and are excluded from all folds.",
+    "Confidence percentages are classifier outputs and have not been calibrated.",
+    "This evaluates intent classification only; it does not evaluate translation or urgency."
+  ]
+}
