@@ -48,3 +48,11 @@ HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 ./venv/bin/python evaluate_grouped.py
 ```
 
 The script writes aggregate metrics to `grouped_cv_report.json`; it does not write message text, names, predictions tied to individual contributors, or embeddings.
+
+To create a private review sheet from the baseline model's held-out errors, run:
+
+```bash
+HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 ./venv/bin/python evaluate_grouped.py --export-review-sheet
+```
+
+This writes up to 10 errors per language and survey label to `/tmp/bantu-sense-review/review_blind.csv`, with blank fields for a fluent reviewer to check language, intent, naturalness, and ambiguity. The matching labels and model predictions go to the separate `review_answer_key.csv`. Give reviewers only the blind sheet and withhold the key until they have finished. Both files are restricted to the current local user and stay outside the repository. Phrase text is copied verbatim and could contain personal information, so share the sheet only if the contributors' consent covers this review; contributor names and timestamps are not included.

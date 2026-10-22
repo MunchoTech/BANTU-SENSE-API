@@ -7,6 +7,10 @@ timestamps, raw messages, and per-contributor IDs are never written to output.
 from __future__ import annotations
 
 import json
+import argparse
+import csv
+import os
+import random
 import re
 import unicodedata
 from collections import Counter, defaultdict
@@ -29,6 +33,7 @@ CLASSES = ["financial", "legal", "medical"]
 N_SPLITS = 5
 RANDOM_STATE = 42
 ABSTENTION_THRESHOLD = 80.0
+REVIEW_SAMPLE_PER_LANGUAGE_CLASS = 10
 
 
 def label_for_column(column: str) -> str | None:
@@ -146,7 +151,122 @@ def report_metrics(y_true, y_pred) -> dict:
     }
 
 
+def export_private_error_review(
+    examples: list[dict],
+    labels: np.ndarray,
+    languages: np.ndarray,
+    predictions: np.ndarray,
+    confidence_percent: np.ndarray,
+    folds: list[tuple[np.ndarray, np.ndarray]],
+    output_dir: Path,
+) -> dict:
+    """Write a blinded phrase sheet and separate answer key outside the repo."""
+    output_dir = output_dir.expanduser().resolve()
+    repo_root = AI_DIR.parent.resolve()
+    if output_dir == repo_root or repo_root in output_dir.parents:
+        raise ValueError("Review files must be written outside the project repository")
+    errors_by_stratum = defaultdict(list)
+    for index, item in enumerate(examples):
+        if labels[index] != predictions[index]:
+            errors_by_stratum[(languages[index], labels[index])].append(index)
+
+    sampler = random.Random(RANDOM_STATE)
+    selected = []
+    selected_counts = {}
+    for language in sorted(set(languages.tolist())):
+        for label in CLASSES:
+            candidates = errors_by_stratum.get((language, label), []).copy()
+            sampler.shuffle(candidates)
+            chosen = candidates[:REVIEW_SAMPLE_PER_LANGUAGE_CLASS]
+            selected.extend(chosen)
+            selected_counts[f"{language}:{label}"] = len(chosen)
+    sampler.shuffle(selected)
+
+    fold_by_index = np.zeros(len(examples), dtype=int)
+    for fold_number, (_, test_indices) in enumerate(folds, start=1):
+        fold_by_index[test_indices] = fold_number
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    review_path = output_dir / "review_blind.csv"
+    key_path = output_dir / "review_answer_key.csv"
+    review_fields = [
+        "sample_id",
+        "language",
+        "phrase",
+        "reviewer_language_check",
+        "reviewer_intent_label",
+        "reviewer_naturalness",
+        "reviewer_ambiguity_or_context_notes",
+    ]
+    key_fields = [
+        "sample_id",
+        "fold",
+        "language",
+        "dataset_label_from_survey_prompt",
+        "model_prediction",
+        "model_confidence_percent_uncalibrated",
+    ]
+
+    def open_private_csv(path: Path):
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        os.fchmod(descriptor, 0o600)
+        return os.fdopen(descriptor, "w", newline="", encoding="utf-8")
+
+    with open_private_csv(review_path) as review_file, open_private_csv(key_path) as key_file:
+        review_writer = csv.DictWriter(review_file, fieldnames=review_fields)
+        key_writer = csv.DictWriter(key_file, fieldnames=key_fields)
+        review_writer.writeheader()
+        key_writer.writeheader()
+
+        for sequence, index in enumerate(selected, start=1):
+            sample_id = f"ERR-{sequence:03d}"
+            review_writer.writerow(
+                {
+                    "sample_id": sample_id,
+                    "language": languages[index],
+                    "phrase": examples[index]["text"],
+                    "reviewer_language_check": "",
+                    "reviewer_intent_label": "",
+                    "reviewer_naturalness": "",
+                    "reviewer_ambiguity_or_context_notes": "",
+                }
+            )
+
+            key_writer.writerow(
+                {
+                    "sample_id": sample_id,
+                    "fold": fold_by_index[index],
+                    "language": languages[index],
+                    "dataset_label_from_survey_prompt": labels[index],
+                    "model_prediction": predictions[index],
+                    "model_confidence_percent_uncalibrated": round(
+                        float(confidence_percent[index]), 2
+                    ),
+                }
+            )
+
+    return {
+        "review_rows": len(selected),
+        "max_per_language_class": REVIEW_SAMPLE_PER_LANGUAGE_CLASS,
+        "selected_errors_by_language_and_dataset_label": selected_counts,
+    }
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--export-review-sheet",
+        action="store_true",
+        help="Export a small blinded error-review sheet to a local directory outside the repository.",
+    )
+    parser.add_argument(
+        "--review-output-dir",
+        type=Path,
+        default=Path("/tmp/bantu-sense-review"),
+        help="Private local output directory used with --export-review-sheet (default: /tmp/bantu-sense-review).",
+    )
+    args = parser.parse_args()
+
     examples, speaker_languages = load_source_examples()
     untraceable_train_rows = verify_source_against_training_file(examples)
     groups, merged_speakers = assign_leakage_safe_groups(examples)
@@ -254,6 +374,17 @@ def main() -> None:
     baseline_nyanja_legal_recall = per_language_metrics["nyanja"]["by_class"]["legal"]["recall"]
     balanced_nyanja_legal_recall = balanced_per_language_metrics["nyanja"]["by_class"]["legal"]["recall"]
     majority_label = Counter(labels.tolist()).most_common(1)[0][0]
+    private_review_export = None
+    if args.export_review_sheet:
+        private_review_export = export_private_error_review(
+            examples,
+            labels,
+            languages,
+            predictions,
+            confidence_percent,
+            folds,
+            args.review_output_dir,
+        )
 
     report = {
         "evaluation": "5-fold stratified grouped cross-validation",
@@ -317,6 +448,15 @@ def main() -> None:
     REPORT_PATH.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(f"\nAggregate grouped evaluation (no message text or names):\n{json.dumps(report, indent=2)}")
     print(f"\nSaved aggregate report to {REPORT_PATH}")
+    if args.export_review_sheet:
+        review_dir = args.review_output_dir.expanduser().resolve()
+        print(f"Private review rows selected: {private_review_export['review_rows']}")
+        print(
+            "Selected per language and dataset label: "
+            f"{json.dumps(private_review_export['selected_errors_by_language_and_dataset_label'])}"
+        )
+        print(f"\nPrivate blinded review sheet: {review_dir / 'review_blind.csv'}")
+        print(f"Separate answer key: {review_dir / 'review_answer_key.csv'}")
 
 
 if __name__ == "__main__":
