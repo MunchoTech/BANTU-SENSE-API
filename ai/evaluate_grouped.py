@@ -167,6 +167,8 @@ def main() -> None:
     folds = list(splitter.split(np.zeros(len(examples)), fold_strata, groups))
     predictions = np.empty(len(examples), dtype=object)
     confidence_percent = np.zeros(len(examples), dtype=float)
+    balanced_predictions = np.empty(len(examples), dtype=object)
+    balanced_confidence_percent = np.zeros(len(examples), dtype=float)
     fold_summaries = []
 
     print(f"Loading frozen encoder: {MODEL_NAME}", flush=True)
@@ -190,12 +192,17 @@ def main() -> None:
         ):
             raise AssertionError("Exact phrase leakage detected between train and test fold")
 
-        classifier = LogisticRegression(max_iter=1000)
-        classifier.fit(features[train_indices], labels[train_indices])
-        fold_probabilities = classifier.predict_proba(features[test_indices])
-        fold_predictions = classifier.classes_[fold_probabilities.argmax(axis=1)]
-        predictions[test_indices] = fold_predictions
-        confidence_percent[test_indices] = fold_probabilities.max(axis=1) * 100
+        model_settings = [
+            ("baseline", None, predictions, confidence_percent),
+            ("class_weight_balanced", "balanced", balanced_predictions, balanced_confidence_percent),
+        ]
+        for _, class_weight, prediction_store, confidence_store in model_settings:
+            classifier = LogisticRegression(max_iter=1000, class_weight=class_weight)
+            classifier.fit(features[train_indices], labels[train_indices])
+            fold_probabilities = classifier.predict_proba(features[test_indices])
+            fold_predictions = classifier.classes_[fold_probabilities.argmax(axis=1)]
+            prediction_store[test_indices] = fold_predictions
+            confidence_store[test_indices] = fold_probabilities.max(axis=1) * 100
 
         language_counts = Counter(languages[test_indices].tolist())
         fold_summaries.append(
@@ -213,16 +220,39 @@ def main() -> None:
         )
 
     overall_metrics = report_metrics(labels, predictions)
+    balanced_overall_metrics = report_metrics(labels, balanced_predictions)
     per_language_metrics = {
         language: report_metrics(labels[languages == language], predictions[languages == language])
         for language in sorted(set(languages.tolist()))
     }
+    balanced_per_language_metrics = {
+        language: report_metrics(
+            labels[languages == language], balanced_predictions[languages == language]
+        )
+        for language in sorted(set(languages.tolist()))
+    }
 
-    accepted = confidence_percent >= ABSTENTION_THRESHOLD
-    accepted_count = int(accepted.sum())
-    selective_accuracy = (
-        float(accuracy_score(labels[accepted], predictions[accepted])) if accepted_count else None
-    )
+    def abstention_summary(model_predictions, model_confidence):
+        accepted = model_confidence >= ABSTENTION_THRESHOLD
+        accepted_count = int(accepted.sum())
+        selective_accuracy = (
+            float(accuracy_score(labels[accepted], model_predictions[accepted]))
+            if accepted_count
+            else None
+        )
+        return {
+            "accepted_phrases": accepted_count,
+            "coverage": round(float(accepted.mean()), 4),
+            "accuracy_on_accepted": (
+                round(selective_accuracy, 4) if selective_accuracy is not None else None
+            ),
+            "abstained_phrases": int((~accepted).sum()),
+        }
+
+    baseline_legal_recall = overall_metrics["by_class"]["legal"]["recall"]
+    balanced_legal_recall = balanced_overall_metrics["by_class"]["legal"]["recall"]
+    baseline_nyanja_legal_recall = per_language_metrics["nyanja"]["by_class"]["legal"]["recall"]
+    balanced_nyanja_legal_recall = balanced_per_language_metrics["nyanja"]["by_class"]["legal"]["recall"]
     majority_label = Counter(labels.tolist()).most_common(1)[0][0]
 
     report = {
@@ -230,7 +260,8 @@ def main() -> None:
         "fold_stratification": "combined language and intent label",
         "random_seed": RANDOM_STATE,
         "encoder": MODEL_NAME,
-        "classifier": "LogisticRegression(max_iter=1000)",
+        "baseline_classifier": "LogisticRegression(max_iter=1000)",
+        "comparison_classifier": "LogisticRegression(max_iter=1000, class_weight='balanced')",
         "feature_extraction": "same as current serving path: text[:512], first token vector",
         "source_contributors": len(speaker_languages),
         "effective_groups_after_exact_phrase_leakage_control": len(set(groups.tolist())),
@@ -250,12 +281,29 @@ def main() -> None:
         ).tolist(),
         "by_language": per_language_metrics,
         "current_80_percent_abstention_threshold": {
-            "accepted_phrases": accepted_count,
-            "coverage": round(float(accepted.mean()), 4),
-            "accuracy_on_accepted": (
-                round(selective_accuracy, 4) if selective_accuracy is not None else None
+            **abstention_summary(predictions, confidence_percent),
+        },
+        "class_weight_balanced": {
+            "overall": balanced_overall_metrics,
+            "confusion_matrix_rows_actual_columns_predicted": confusion_matrix(
+                labels, balanced_predictions, labels=CLASSES
+            ).tolist(),
+            "by_language": balanced_per_language_metrics,
+            "current_80_percent_abstention_threshold": abstention_summary(
+                balanced_predictions, balanced_confidence_percent
             ),
-            "abstained_phrases": int((~accepted).sum()),
+        },
+        "comparison_deltas_balanced_minus_baseline": {
+            "accuracy": round(
+                balanced_overall_metrics["accuracy"] - overall_metrics["accuracy"], 4
+            ),
+            "macro_f1": round(
+                balanced_overall_metrics["macro_f1"] - overall_metrics["macro_f1"], 4
+            ),
+            "legal_recall": round(balanced_legal_recall - baseline_legal_recall, 4),
+            "nyanja_legal_recall": round(
+                balanced_nyanja_legal_recall - baseline_nyanja_legal_recall, 4
+            ),
         },
         "folds": fold_summaries,
         "limitations": [

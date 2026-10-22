@@ -7,27 +7,30 @@
 
 ## Result
 
-The current frozen Afro-XLM-R large encoder plus Logistic Regression head reached **63.2% accuracy** on 416 source-traceable phrases from contributors held out of the corresponding training fold. The majority-class baseline is **35.1%**.
+I compared the current Logistic Regression head with `class_weight="balanced"` using the same frozen Afro-XLM-R features and the same five contributor-held-out folds. The majority-class baseline is **35.1%**.
 
-| Measure | Result |
-| --- | ---: |
-| Overall accuracy | 63.2% |
-| Overall macro F1 | 63.2% |
-| Bemba accuracy | 68.6% |
-| Nyanja accuracy | 58.6% |
-| Legal recall, both languages | 59.8% |
-| Legal recall, Nyanja | 55.2% |
+| Measure | Current classifier | Class-weighted |
+| --- | ---: | ---: |
+| Overall accuracy | 63.2% | 63.5% |
+| Overall macro F1 | 63.2% | 63.4% |
+| Legal recall, both languages | 59.8% | 60.6% |
+| Legal recall, Bemba | 65.0% | 66.7% |
+| Legal recall, Nyanja | 55.2% | 55.2% |
+| Bemba accuracy | 68.6% | 69.6% |
+| Nyanja accuracy | 58.6% | 58.1% |
 
-The model is showing a useful signal above the simple baseline, but it still makes substantial errors. Legal intent is its weakest category, particularly for Nyanja. In the confusion matrix, 37 financial phrases were predicted as legal, while 27 legal phrases were predicted as financial.
+Class weighting changes overall accuracy by **0.2 percentage points** and macro F1 by **0.3 points**. Legal recall rises by **0.8 points overall**, entirely in Bemba; Nyanja legal recall does not change. Nyanja accuracy drops by about **0.5 points**. This is too small and uneven to justify changing the production classifier. The class-weighted model is an experiment only; the saved model was not replaced.
 
-At the existing 80% confidence cutoff, the fold models accepted 63.2% of phrases and were correct on 73.8% of those accepted phrases; 153 of 416 were below the cutoff. The probabilities have not been calibrated, so this is a description of the current threshold behavior, not evidence that “80% confidence” means an 80% chance of correctness.
+Both versions still make substantial errors. Legal intent remains the weakest category, particularly for Nyanja. With the current classifier, 37 financial phrases were predicted as legal and 27 legal phrases were predicted as financial.
+
+At the existing 80% confidence cutoff, the current model accepted 63.2% of phrases and was correct on 73.8% of those accepted phrases. The weighted model accepted 62.5% and was correct on 73.5% of those. The probabilities have not been calibrated, so this does not mean “80% confidence” corresponds to an 80% chance of correctness.
 
 ## How it was measured
 
 - Rebuilt examples directly from the 24 source survey rows, assigning anonymous contributor IDs from row position. The script reads only the language and phrase-answer columns; it does not load the name or timestamp columns.
 - Kept every contributor’s phrases in one fold. Contributors sharing an identical phrase were grouped together too, preventing exact phrase overlap between fold training and evaluation data.
 - Stratified folds by both language and intent category. Each fold holds out contributors from both Bemba and Nyanja.
-- Recomputed the Logistic Regression classifier inside each fold. The frozen encoder and first-token feature extraction match the current training and serving code. The saved production classifier was not changed.
+- Recomputed both Logistic Regression variants inside each fold. The frozen encoder and first-token feature extraction match the current training and serving code. The saved production classifier was not changed.
 - Evaluated all held-out predictions once, then calculated aggregate and per-language metrics.
 
 The source survey reproduces 416 of the 424 rows currently in `train.csv`. **Eight rows do not have a matching source contributor**, so they were excluded from both training and evaluation in every fold. They need provenance before they can be included in a speaker-held-out evaluation.
