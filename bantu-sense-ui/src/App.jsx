@@ -6,6 +6,37 @@ const examples = [
   'Nifuna kutsegula account ya banki.',
 ]
 
+function normalizeAnalysisResponse(data) {
+  const intent = data.intent ?? data.detectedIntent
+  if (!intent) return null
+
+  const legacyUrgency = data.urgencyLevel == null ? '' : String(data.urgencyLevel)
+  const scoreFromLegacy = legacyUrgency.match(/(\d+)\s*\/\s*10/)
+  const levelFromLegacy = legacyUrgency.split(/[ (]/)[0]?.toUpperCase()
+  const status = data.status ?? (
+    intent === 'PENDING_ANALYSIS'
+      ? 'unavailable'
+      : intent === 'UNCERTAIN' ? 'uncertain' : 'analyzed'
+  )
+
+  return {
+    status,
+    intent: intent === 'PENDING_ANALYSIS' ? 'UNCERTAIN' : intent,
+    confidence: data.confidence ?? data.confidenceScore ?? null,
+    urgencyScore: data.urgencyScore ?? (scoreFromLegacy ? Number(scoreFromLegacy[1]) : null),
+    urgencyLevel: data.urgencyScore != null ? data.urgencyLevel : (levelFromLegacy || null),
+    reviewSubmitted: data.reviewSubmitted ?? false,
+    message: data.message ?? data.analysisMessage ?? (
+      intent === 'PENDING_ANALYSIS'
+        ? 'The analysis service is unavailable. Please try again when it is running.'
+        : intent === 'UNCERTAIN'
+          ? 'The analysis was uncertain.'
+          : 'Your message has been analyzed.'
+    ),
+    semanticContext: data.semanticContext ?? null,
+  }
+}
+
 function App() {
   const [inputText, setInputText] = useState('')
   const [result, setResult] = useState(null)
@@ -30,16 +61,11 @@ function App() {
       if (!response.ok && !data) throw new Error('The analysis service could not complete this request.')
       if (!data) throw new Error('The analysis service returned an invalid response.')
 
-      setResult({
-        status: data.status,
-        intent: data.intent,
-        confidence: data.confidence,
-        urgencyScore: data.urgencyScore,
-        urgencyLevel: data.urgencyLevel,
-        reviewSubmitted: data.reviewSubmitted,
-        message: data.message,
-        semanticContext: data.semanticContext,
-      })
+      const normalizedResult = normalizeAnalysisResponse(data)
+      if (!normalizedResult) {
+        throw new Error('The API response did not include an intent. Restart the backend and try again.')
+      }
+      setResult(normalizedResult)
     } catch (error) {
       setResult({ error: error.message || 'Unable to reach the Bantu-Sense service.' })
     } finally {
@@ -129,7 +155,7 @@ function App() {
                 <div className="result-intent">{result.intent?.replaceAll('_', ' ')}</div>
                 {result.message && <p>{result.message}</p>}
                 {result.semanticContext && <p>{result.semanticContext}</p>}
-                {result.intent === 'UNCERTAIN' && (
+                {result.intent === 'UNCERTAIN' && result.status !== 'unavailable' && (
                   <span className="result-note">
                     {result.reviewSubmitted
                       ? 'Review contribution submitted with your consent.'
