@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 import joblib
 from transformers import pipeline
 import csv
@@ -20,10 +20,12 @@ def calculate_urgency(text, intent):
     
     # Context-specific logic: Medical + High Score = Critical
     if intent == "MEDICAL" and score == 9:
-        return "CRITICAL (9/10)"
+        level = "CRITICAL"
     elif score == 9:
-        return "HIGH (9/10)"
-    return f"ROUTINE ({score}/10)"
+        level = "HIGH"
+    else:
+        level = "ROUTINE"
+    return score, level
 
 # --- 2. THE BRAIN LOADING ---
 print("Waking up Bantu-Sense...")
@@ -31,9 +33,12 @@ extractor = pipeline("feature-extraction", model="Davlan/afro-xlmr-large-76L")
 clf = joblib.load('bantu_sense_head.joblib')
 
 class UserInput(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     text: str
     donate_for_review: bool = Field(
         default=False,
+        alias="donateForReview",
         description="Explicitly allow this message to be stored for human review and model improvement.",
     )
 
@@ -61,7 +66,7 @@ async def predict_intent(data: UserInput):
     confidence = max(probs) * 100
 
     # --- 3. APPLYING BEHAVIORAL LOGIC ---
-    urgency_status = calculate_urgency(user_text, intent_label.upper())
+    urgency_score, urgency_level = calculate_urgency(user_text, intent_label.upper())
 
     # --- 4. OPTIONAL, CONSENT-BASED REVIEW COLLECTION ---
     if confidence < 80.0:
@@ -71,21 +76,26 @@ async def predict_intent(data: UserInput):
         return {
             "status": "uncertain",
             "intent": "UNCERTAIN",
-            "urgency_score": urgency_status,
-            "confidence": f"{confidence:.2f}%",
-            "review_submitted": review_submitted,
+            "confidence": round(confidence, 2),
+            "urgencyScore": urgency_score,
+            "urgencyLevel": urgency_level,
+            "reviewSubmitted": review_submitted,
             "message": (
                 "Your message was submitted for review with your consent."
                 if review_submitted
                 else "The analysis was uncertain. Your message was not stored for model improvement."
             ),
+            "semanticContext": None,
         }
 
     # --- 5. THE WINNING RESPONSE ---
     return {
-        "status": "success",
+        "status": "analyzed",
         "intent": intent_label.upper(),
-        "urgency_score": urgency_status,
-        "confidence": f"{confidence:.2f}%",
-        "semantic_context": f"Request identified as {intent_label.lower()} with {urgency_status.split()[0].lower()} priority."
+        "confidence": round(confidence, 2),
+        "urgencyScore": urgency_score,
+        "urgencyLevel": urgency_level,
+        "reviewSubmitted": False,
+        "message": "Your message has been analyzed.",
+        "semanticContext": f"Request identified as {intent_label.lower()} with {urgency_level.lower()} priority.",
     }

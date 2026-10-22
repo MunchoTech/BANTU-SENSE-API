@@ -26,12 +26,6 @@ public class Inquiry {
 
     private Double confidenceScore;
 
-    @Transient
-    private String analysisMessage;
-
-    @Transient
-    private Boolean reviewSubmitted;
-
     private LocalDateTime createdAt;
 
 

@@ -6,8 +6,10 @@ import lombok.Data;
 public class AnalysisResponse {
     private String status;
     private String intent;
-    private String urgency_score; // Matches Python's "urgency_score"
-    private String confidence;
-    private String message; // For when Python is "uncertain"
-    private Boolean review_submitted;
+    private Double confidence;
+    private Integer urgencyScore;
+    private String urgencyLevel;
+    private boolean reviewSubmitted;
+    private String message;
+    private String semanticContext;
 }

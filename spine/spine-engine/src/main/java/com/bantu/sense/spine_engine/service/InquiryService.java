@@ -17,7 +17,7 @@ public class InquiryService {
     @Autowired // NEW: We plug in the "Caller" we just built
     private AIService aiService;
 
-    public Inquiry saveInquiry(String text, boolean donateForReview) {
+    public AnalysisResponse saveInquiry(String text, boolean donateForReview) {
         Inquiry inquiry = new Inquiry();
         inquiry.setOriginalText(text);
 
@@ -26,35 +26,14 @@ public class InquiryService {
 
         // 2. Map the data (The missing link is here!)
         inquiry.setDetectedIntent(aiResult.getIntent());
-        inquiry.setUrgencyLevel(aiResult.getUrgency_score());
-        inquiry.setAnalysisMessage(aiResult.getMessage());
-        inquiry.setReviewSubmitted(aiResult.getReview_submitted());
+        inquiry.setUrgencyLevel(aiResult.getUrgencyLevel());
 
         // NEW: Clean the "%" sign and save the number
-        if (aiResult.getConfidence() != null) {
-            String cleanConfidence = aiResult.getConfidence().replace("%", "");
-            inquiry.setConfidenceScore(Double.parseDouble(cleanConfidence));
-        }
+        inquiry.setConfidenceScore(aiResult.getConfidence());
 
-        return inquiryRepository.save(inquiry);
+        inquiryRepository.save(inquiry);
+        return aiResult;
     }
-
-   /* public Inquiry saveInquiry(String text) {
-        // 1. Validation...
-
-        Inquiry inquiry = new Inquiry();
-        inquiry.setOriginalText(text);
-
-        // 2. Call the Bridge and get the full response object
-        AnalysisResponse aiResult = aiService.callPythonAI(text);
-
-        // 3. Map the Python data to your Java Entity
-        inquiry.setDetectedIntent(aiResult.getIntent());
-        inquiry.setUrgencyLevel(aiResult.getUrgency_score());
-        // Pro-Tip: You could add a 'confidence' column to your Inquiry entity too!
-
-        return inquiryRepository.save(inquiry);
-    }*/
 
     public java.util.List<Inquiry> getAllInquiries() {
         return inquiryRepository.findAll();

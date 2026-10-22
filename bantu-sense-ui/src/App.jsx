@@ -26,21 +26,19 @@ function App() {
         body: JSON.stringify({ originalText: inputText.trim(), donateForReview }),
       })
 
-      if (!response.ok) throw new Error('The analysis service could not complete this request.')
+      const data = await response.json().catch(() => null)
+      if (!response.ok && !data) throw new Error('The analysis service could not complete this request.')
+      if (!data) throw new Error('The analysis service returned an invalid response.')
 
-      const contentType = response.headers.get('content-type') || ''
-      const data = contentType.includes('application/json') ? await response.json() : null
-      setResult(data ? {
-        intent: data.detectedIntent || 'PENDING_ANALYSIS',
-        confidence: data.confidenceScore,
-        urgency: data.urgencyLevel,
+      setResult({
+        status: data.status,
+        intent: data.intent,
+        confidence: data.confidence,
+        urgencyScore: data.urgencyScore,
+        urgencyLevel: data.urgencyLevel,
         reviewSubmitted: data.reviewSubmitted,
-        message: data.detectedIntent === 'PENDING_ANALYSIS'
-          ? 'Your message was received and is waiting for analysis.'
-          : data.analysisMessage || 'Your message has been analyzed.',
-      } : {
-        intent: 'PENDING_ANALYSIS',
-        message: 'Your message was received and is waiting for analysis.',
+        message: data.message,
+        semanticContext: data.semanticContext,
       })
     } catch (error) {
       setResult({ error: error.message || 'Unable to reach the Bantu-Sense service.' })
@@ -119,15 +117,18 @@ function App() {
           </div>
 
           {result && (
-            <div className={`result-panel${result.error ? ' result-error' : ''}`} role="status" aria-live="polite">
+            <div className={`result-panel${result.error || result.status === 'unavailable' ? ' result-error' : ''}`} role="status" aria-live="polite">
               {result.error ? <>
                 <div className="result-label">SERVICE UNAVAILABLE</div>
                 <p>{result.error}</p>
                 <span className="result-note">Check that the Bantu-Sense services are running, then try again.</span>
               </> : <>
-                <div className="result-label">ANALYSIS RESULT</div>
+                <div className="result-label">
+                  {result.status === 'unavailable' ? 'ANALYSIS UNAVAILABLE' : 'ANALYSIS RESULT'}
+                </div>
                 <div className="result-intent">{result.intent?.replaceAll('_', ' ')}</div>
                 {result.message && <p>{result.message}</p>}
+                {result.semanticContext && <p>{result.semanticContext}</p>}
                 {result.intent === 'UNCERTAIN' && (
                   <span className="result-note">
                     {result.reviewSubmitted
@@ -136,8 +137,8 @@ function App() {
                   </span>
                 )}
                 <div className="result-details">
-                  {result.confidence != null && <span><b>Confidence</b>{result.confidence}%</span>}
-                  {result.urgency && <span><b>Urgency</b>{result.urgency}</span>}
+                  {result.confidence != null && <span><b>Confidence</b>{result.confidence.toFixed(2)}%</span>}
+                  {result.urgencyScore != null && <span><b>Urgency</b>{result.urgencyLevel} ({result.urgencyScore}/10)</span>}
                 </div>
               </>}
             </div>

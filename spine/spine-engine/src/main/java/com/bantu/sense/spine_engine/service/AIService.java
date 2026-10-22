@@ -28,10 +28,13 @@ public class AIService {
             System.out.println("CRITICAL: Python Brain is unreachable. Activating Fallback.");
 
             AnalysisResponse fallback = new AnalysisResponse();
-            fallback.setStatus("offline");
-            fallback.setIntent("PENDING_ANALYSIS");
-            fallback.setUrgency_score("QUEUED");
+            fallback.setStatus("unavailable");
+            fallback.setIntent("UNCERTAIN");
+            fallback.setUrgencyScore(null);
+            fallback.setUrgencyLevel("UNKNOWN");
+            fallback.setReviewSubmitted(false);
             fallback.setMessage("System is currently in offline mode due to connectivity.");
+            fallback.setSemanticContext(null);
 
             return fallback;
         }

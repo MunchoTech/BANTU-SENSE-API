@@ -1,8 +1,9 @@
 package com.bantu.sense.spine_engine.controller;
 
 
-import com.bantu.sense.spine_engine.model. Inquiry;
+import com.bantu.sense.spine_engine.dto.AnalysisResponse;
 import com.bantu.sense.spine_engine.dto.InquiryRequest;
+import com.bantu.sense.spine_engine.model.Inquiry;
 import com.bantu.sense.spine_engine.service.InquiryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,14 +22,11 @@ public class InquiryController {
     // Create a small "Request" class or use a Map to grab the specific field
     @PostMapping("/send")
     public ResponseEntity<?> receiveInquiry(@RequestBody InquiryRequest input) {
-        Inquiry saved = inquiryService.saveInquiry(input.getOriginalText(), input.isDonateForReview());
-
-        // If the AI was offline, we inform the user
-        if ("PENDING_ANALYSIS".equals(saved.getDetectedIntent())) {
-            return ResponseEntity.accepted().body("Message received. We are processing it shortly.");
+        AnalysisResponse result = inquiryService.saveInquiry(input.getOriginalText(), input.isDonateForReview());
+        if ("unavailable".equals(result.getStatus())) {
+            return ResponseEntity.status(503).body(result);
         }
-
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(result);
     }
     // This listens for "GET" requests (reading data)
     @GetMapping("/all")
