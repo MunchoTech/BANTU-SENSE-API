@@ -26,6 +26,9 @@
 .brand-mark { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 10px 10px 10px 3px; background: var(--green); color: white; font-size: 19px; letter-spacing: -1px; }
 .brand-light { color: #82918a; font-weight: 500; }
 .topbar-note { display: flex; align-items: center; gap: 9px; color: #6d7d76; font-size: 12px; letter-spacing: .01em; }
+.topbar-nav { display: flex; align-items: center; gap: 22px; }
+.review-nav-link { color: #42634e; font-size: 12px; font-weight: 700; }
+.review-nav-link:hover { color: #164536; text-decoration: underline; text-underline-offset: 4px; }
 .status-dot { width: 7px; height: 7px; background: #bd7a3c; border-radius: 50%; box-shadow: 0 0 0 3px #bd7a3c1c; }
 
 .main-content { width: min(100% - 40px, 800px); margin: auto; padding: 68px 0 46px; }
@@ -84,6 +87,8 @@ textarea:focus { border-color: #679176; background: white; box-shadow: 0 0 0 3px
 @media (max-width: 600px) {
   .topbar { height: 64px; padding: 0 20px; }
   .topbar-note { font-size: 0; gap: 0; }
+  .topbar-nav { gap: 12px; }
+  .review-nav-link { font-size: 11px; }
   .main-content { width: min(100% - 28px, 800px); padding: 49px 0 35px; }
   .intro { margin-bottom: 26px; }
   h1 { letter-spacing: -1.7px; }

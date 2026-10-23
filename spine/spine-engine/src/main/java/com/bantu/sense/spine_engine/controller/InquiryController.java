@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController // Tells Spring this class handles web requests
 @RequestMapping("/api/inquiries") // The "URL address" for this ear
-@CrossOrigin(origins = "http://localhost:5173") // Allow your React app
+@CrossOrigin(origins = "${bantu.web.allowed-origin:http://localhost:5173}") // Allow your React app
 public class InquiryController {
 
     @Autowired

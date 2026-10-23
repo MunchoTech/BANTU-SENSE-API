@@ -1,5 +1,9 @@
 import { useState } from 'react'
+import ReviewPage from './ReviewPage.jsx'
+import ReviewResultsPage from './ReviewResultsPage.jsx'
 import './App.css'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 const examples = [
   'Mwana wanga akudwala kwambiri, ndithandizeni.',
@@ -37,7 +41,7 @@ function normalizeAnalysisResponse(data) {
   }
 }
 
-function App() {
+function AnalyzerPage() {
   const [inputText, setInputText] = useState('')
   const [result, setResult] = useState(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -51,7 +55,7 @@ function App() {
     setResult(null)
 
     try {
-      const response = await fetch('http://localhost:8080/api/inquiries/send', {
+      const response = await fetch(`${API_BASE_URL}/api/inquiries/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ originalText: inputText.trim(), donateForReview }),
@@ -80,7 +84,10 @@ function App() {
           <span className="brand-mark" aria-hidden="true">b.</span>
           <span>Bantu<span className="brand-light">Sense</span></span>
         </a>
-        <div className="topbar-note"><span className="status-dot" /> Language support for people first</div>
+        <nav className="topbar-nav" aria-label="Main navigation">
+          <div className="topbar-note"><span className="status-dot" /> Language support for people first</div>
+          <a className="review-nav-link" href="/review">Community review</a>
+        </nav>
       </header>
 
       <main id="home" className="main-content">
@@ -179,4 +186,8 @@ function App() {
   )
 }
 
-export default App
+export default function App() {
+  if (window.location.pathname === '/review/results') return <ReviewResultsPage />
+  if (window.location.pathname === '/review') return <ReviewPage />
+  return <AnalyzerPage />
+}
